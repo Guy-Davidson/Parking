@@ -1,0 +1,14 @@
+<html>
+    <body>                   
+        <h1>Click OK to enter</h1>
+        <hr>
+        <form method="post" id="entry_form">
+            <p><%= number %></p>
+            <button type="submit">OK</button>
+        </form>
+    </body>
+    <script defer>
+        const number = '<%- JSON.stringify(number) %>'           
+        document.getElementById('entry_form').action = `/entry?plate=${number}&parkingLot=382`
+    </script>
+</html>

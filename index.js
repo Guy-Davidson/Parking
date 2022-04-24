@@ -7,19 +7,29 @@ const app = express();
 const upload = multer()
 const rekognition = new AWS.Rekognition({region: 'eu-west-1'});
 
-app.get('/', (req, res) => {
-    res.sendFile('index.html', {root: __dirname})
+app.set('view engine', 'ejs')
+
+app.get('/', (req, res) => {    
+    res.render('index')
 })
 
-app.post('/upload', upload.single('image'), (req, res) => {
-    const formData = req.file;
-    console.log(formData);
+app.post('/upload', upload.single('image'), (req, res) => {    
     const params = {Image: {Bytes: req.file.buffer}}
-    rekognition.detectText(params, function(err, data) {
-        if (err) console.log(err, err.stack); // an error occurred
-        else     console.log(data);           // successful response
-      });
-    res.send("greatest")
+    rekognition.detectText(params, (err, data) => {
+        if (err) console.log(err, err.stack)
+        else {
+            console.log(data)                       
+            res.render('./entry', {
+                number: Math.random()
+            })
+            return 
+        }   
+      });    
+})
+
+app.post('/entry', (req, res) => {
+    console.log(req.query);
+    res.send('greatest')
 })
 
 const PORT = process.env.PORT || 5000
