@@ -6,6 +6,9 @@ AWS.config.region = 'eu-west-1'
 const app = express();
 const upload = multer()
 const rekognition = new AWS.Rekognition({region: 'eu-west-1'});
+const db = require('mongoose');
+const dbURL = 'mongodb+srv://guydav:guy050492@cluster0.tutps.mongodb.net/myFirstDatabase?retryWrites=true&w=majority'
+const Plate = require('./plateModel')
 
 app.set('view engine', 'ejs')
 
@@ -15,47 +18,71 @@ app.get('/', (req, res) => {
 
 app.post('/upload', upload.single('image'), (req, res) => {    
     const params = {Image: {Bytes: req.file.buffer}}
-    rekognition.detectText(params, (err, data) => {
+    rekognition.detectText(params, async (err, data) => {
         if (err) console.log(err, err.stack)
         else {
-            console.log(data)                       
-            res.render('./entry', {
-                number: Math.random()
-            })
-            return 
+            let plateText = ''
+            for(const text of data.TextDetections) {
+                if(text.Type === 'LINE' && text.DetectedText.match(/\d+/g) && text.DetectedText.length > plateText.length) {
+                    plateText = text.DetectedText
+                }
+            }    
+            
+            const plate = await Plate.find({ text: plateText })
+
+            if(!plate.length) {
+                res.render('./entry', { plate: plateText })
+            } else {
+                res.render('./exit', { ticket: plate[0]._id.toString() })
+            }
         }   
       });    
 })
 
-app.post('/entry', (req, res) => {
-    console.log(req.query);
-    res.send('greatest')
+app.post('/entry', async(req, res) => {
+    try {
+        const plate = new Plate({               
+            text: req.query.plate.slice(1, (req.query.plate.length - 1)),
+            parkingLot: '123',
+        })      
+        let result = await plate.save();                                         
+        res.send({
+            ticketId: result._id
+        })
+    } catch (error) {
+        handleError(error); 
+    } 
+})
+
+app.post('/exit', async(req, res) => {
+    try {                          
+        ticketId = req.query.ticketId.slice(1, (req.query.ticketId.length - 1))
+        const plate = await Plate.findOneAndDelete({ _id: ticketId })                  
+        const minDiff = (Date.now() - plate.createdAt) / 1000 / 60
+        const price = Math.floor(minDiff / 15) * 2.5 
+
+        res.send({
+            licensePlate: plate.text,
+            parkingLot: plate.parkingLot,
+            totalParkedTime: `${minDiff} minutes`,
+            price: `${price}$`
+        })        
+    } catch (error) {
+        handleError(error); 
+    } 
 })
 
 const PORT = process.env.PORT || 5000
 
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`)  
-})
+db.connect(dbURL).then(() => {
+    console.log(`connected to db`)
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`)  
+    }) 
+  }).catch((error) => {
+    console.log(error)
+  })
 
-
-
-
-
-
-
-
-
-
-
-
-
-// app.use((_, res, next) => {
-//     res.setHeader('Access-Control-Allow-Origin', '*');
-//     res.setHeader('Access-Control-Allow-Methods', '*');
-//     res.setHeader('Access-Control-Allow-Headers', '*');
-//     next();
-//   });
-
-// app.use(express.urlencoded({extended: true}))
-// app.use(express.json())
+const handleError = (err) => {
+    console.log(err);
+}

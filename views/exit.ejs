@@ -1,0 +1,14 @@
+<html>
+    <body>                   
+        <h1>Click OK to exit</h1>
+        <hr>
+        <form method="post" id="entry_form">
+            <p>ticket id: <%= ticket %></p>
+            <button type="submit">OK</button>
+        </form>
+    </body>
+    <script defer>
+        const ticket = '<%- JSON.stringify(ticket) %>'           
+        document.getElementById('entry_form').action = `/exit?ticketId=${ticket}`
+    </script>
+</html>
