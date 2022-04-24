@@ -7,7 +7,7 @@ const app = express();
 const upload = multer()
 const rekognition = new AWS.Rekognition({region: 'eu-west-1'});
 const db = require('mongoose');
-const dbURL = 'mongodb+srv://guydav:guy050492@cluster0.tutps.mongodb.net/myFirstDatabase?retryWrites=true&w=majority'
+const dbURL = ''
 const Plate = require('./plateModel')
 
 app.set('view engine', 'ejs')
