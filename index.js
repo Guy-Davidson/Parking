@@ -1,3 +1,4 @@
+const fs = require('fs')
 const express = require('express');
 const multer = require('multer');
 const AWS = require('aws-sdk');
@@ -7,7 +8,6 @@ const app = express();
 const upload = multer()
 const rekognition = new AWS.Rekognition({region: 'eu-west-1'});
 const db = require('mongoose');
-const dbURL = ''
 const Plate = require('./plateModel')
 
 app.set('view engine', 'ejs')
@@ -37,6 +37,7 @@ app.post('/upload', upload.single('image'), (req, res) => {
             }
         }   
       });    
+
 })
 
 app.post('/entry', async(req, res) => {
@@ -64,7 +65,7 @@ app.post('/exit', async(req, res) => {
         res.send({
             licensePlate: plate.text,
             parkingLot: plate.parkingLot,
-            totalParkedTime: `${minDiff} minutes`,
+            totalParkedTime: `${minDiff.toFixed(2)} minutes`,
             price: `${price}$`
         })        
     } catch (error) {
@@ -74,15 +75,20 @@ app.post('/exit', async(req, res) => {
 
 const PORT = process.env.PORT || 5000
 
-db.connect(dbURL).then(() => {
-    console.log(`connected to db`)
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`)  
-    }) 
-  }).catch((error) => {
-    console.log(error)
-  })
-
 const handleError = (err) => {
     console.log(err);
 }
+
+fs.readFile('./mongodbKey.txt', 'utf8' , (err, data) => {
+    if (err) console.error(err)
+    else {
+        db.connect(data).then(() => {
+            console.log(`connected to db`)
+            app.listen(PORT, () => {
+              console.log(`Server running on port ${PORT}`)  
+            }) 
+          }).catch((error) => {
+            console.log(error)
+          })
+    }             
+  })
