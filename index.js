@@ -79,7 +79,7 @@ const handleError = (err) => {
     console.log(err);
 }
 
-fs.readFile('./mongodbKey.txt', 'utf8' , (err, data) => {
+fs.readFile('../mongodbKey.txt', 'utf8' , (err, data) => {
     if (err) console.error(err)
     else {
         db.connect(data).then(() => {
